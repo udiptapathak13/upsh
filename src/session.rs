@@ -2,12 +2,43 @@ use std::process::Command;
 use std::ffi::OsStr;
 use std::str;
 
-pub fn pwd(uname: &Vec<u8>) -> Vec<u8> {
+pub fn simplified_pwd(uname: &Vec<u8>) -> Vec<u8> {
 	let pwd = Command::new("pwd")
 		.output()
 		.unwrap()
 		.stdout;
-	return pwd;
+	let home = Command::new("grep")
+		.arg(OsStr::new(str::from_utf8(&uname)
+			.unwrap()))
+		.arg("/etc/passwd")
+		.output()
+		.unwrap()
+		.stdout;
+	let mut iter = 0;
+	let mut iter2 = 0;
+	while home[iter2] != b'/' {
+		iter2 += 1;
+	}
+	while pwd[iter] == home[iter2] {
+		iter += 1;
+		iter2 += 1;
+	}
+	let pwd_len = pwd.len();
+	let mut res = Vec::<u8>::new();
+	if uname.len() != 4
+	|| uname[0] != b'r'
+	|| uname[1] != b'o'
+	|| uname[2] != b'o'
+	|| uname[3] != b't' {
+		res.push(b'~');
+	} else {
+		res.push(b'/');
+	}
+	while iter < pwd_len {
+		res.push(pwd[iter]);
+		iter += 1;
+	}
+	return res;
 }
 
 pub fn get() -> Vec<u8>
@@ -23,7 +54,7 @@ pub fn get() -> Vec<u8>
 		.output()
 		.unwrap()
 		.stdout;
-	let mut pwd = pwd(&uname);
+	let mut pwd = simplified_pwd(&uname);
 	res.append(&mut uname);
 	res.push(b'@');
 	res.append(&mut hname);
