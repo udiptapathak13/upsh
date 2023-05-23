@@ -1,6 +1,8 @@
+mod session;
+mod command;
+
 use std::io;
 use std::io::Write;
-mod session;
 
 fn main()
 {
@@ -16,6 +18,8 @@ fn main()
 		if comm.eq("exit") {
 			break;
 		}
-		print!("{}\x0a", comm);
+		io::stdout()
+			.write_all(&command::run(comm))
+			.unwrap();
 	}
 }
